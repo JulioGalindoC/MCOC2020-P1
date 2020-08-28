@@ -1,0 +1,98 @@
+#                                                         #
+#      Materia: Metodos Computacionales en IOC            #
+#                                                         #
+#      Entrega 1 proyecto 1                               #
+#                                                         #
+#      Alumno: Julio Andres Galindo Carazas               #
+#                                                         #
+#      Fecha: 24/08/2020                                  #
+#                                                         #
+###########################################################
+#
+# EDM basica del satelite 
+#########################################
+import scipy as sp
+from scipy.integrate import odeint
+import matplotlib.pylab as plt
+from numpy import cos, sin, array
+
+# Constantes:
+G = 6.674 * 10**-11     #[N·m^2·Kg^-2]
+radio_t = 6371          #[Km]
+masa_t = 59736 * 10**24 #[kg]
+distancia = radio_t + 700
+
+# Rotacion:
+Ω = 2.27 * 10**-5       #[rad/s]
+
+# Funcion a integrar:
+# z es el vector de estado
+
+# z = [z1, z2]
+# z1 = [x, y, z]
+# z2 = d/dt [x, y, z] = [vx, vy, vz]
+
+# Vector de estado:
+# z[0] -> x
+# z[1] -> y
+# z[2] -> z
+# z[3] -> vx
+# z[4] -> vy
+# z[5] -> vz
+
+# Vector de tiempo:
+t = sp.linspace(0,30,1001)
+
+# Matriz rotacion:
+R = array([[cos(Ω*t), -sin(Ω*t), 0],
+           [sin(Ω*t), cos(Ω*t), 0],
+           [0, 0, 1]])
+
+Rp = array([[-sin(Ω*t)*Ω, -cos(Ω*t)*Ω, 0],
+            [cos(Ω*t)*Ω, -sin(Ω*t)*Ω, 0],
+            [0, 0, 0]])
+
+Rpp = array([[-cos(Ω*t)*Ω**2, sin(Ω*t)*Ω**2, 0],
+             [-sin(Ω*t)*Ω**2, -cos(Ω*t)*Ω**2, 0],
+             [0, 0, 0]])
+
+def satelite(z,t) :
+    zp = sp.zeros(6)
+    aux = R.transpose()
+    aux1 = sp.matmul(Rpp,z[0:3]) + 2* sp.matmul(Rp,z[3:6])
+    zp[0:3] = z[3:6]
+    aux2 = -G*masa_t/distancia**3
+    print(aux2)
+    zp[3:6] =  aux2 * z[0:3] - sp.matmul(aux,aux1)
+    v = z[3:6]  #saca los ultimos 2 componentes
+
+    return zp
+
+
+# Parte en el origen y tiene vx = vy =20000 [m/s]
+vi = 1000000*1000/3600.
+z0 = sp.array([distancia,0,0,vi,vi,vi])
+
+sol = odeint(satelite, z0, t)
+
+x = sol[:,0]
+y = sol[:,1]
+z = sol[:,2]
+
+plt.figure(1)
+plt.plot(x,y)
+
+
+# Grafico:
+#plt.legend(['V=0 m/s','V=10 m/s','V=20 m/s'])
+plt.title('Trayectoria para distintos vientos')
+plt.xlabel('X (m)')
+plt.ylabel('Y (m)')
+#plt.axis([0,150,0,50])
+plt.grid(True)
+
+plt.tight_layout()
+
+# Guardar grafico como png sin abrir una ventana de visualizacion
+#plt1.savefig('Trayectoria para distintos vientos')
+plt.show()
